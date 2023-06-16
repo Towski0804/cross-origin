@@ -33,11 +33,35 @@ let server = http.createServer(function (request, response) {
     response.setHeader("Content-Type", "text/javascript;charset=utf-8");
     response.write(fs.readFileSync("./public/qq.js"));
     response.end();
-  } else if (path === "/friend.json") {
+  } else if (path === "/friends.json") {
     response.statusCode = 200;
     response.setHeader("Content-Type", "text/json;charset=utf-8");
-    response.write(fs.readFileSync("./public/friend.json"));
+    response.setHeader("Access-Control-Allow-Origin", "http://hacker.com:9999");
+    response.write(fs.readFileSync("./public/friends.json"));
     response.end();
+  } else if (path === "/friends.js") {
+    // json 定向分享给来自制定域名的请求
+    if (request.headers["referer"].indexOf("http://hacker.com:9999") === 0) {
+      response.statusCode = 200;
+      response.setHeader("Content-Type", "text/javascript;charset=utf-8");
+      response.setHeader(
+        "Access-Control-Allow-Origin",
+        "http://hacker.com:9999"
+      );
+      // 拿到JS内容
+      const string = `window[{{name}}]({{data}})`;
+      // 拿到数据
+      const data = fs.readFileSync("./public/friends.json").toString();
+      // 把数据填到JS里面
+      const string2 = string
+        .replace("{{data}}", data)
+        .replace("{{name}}", query.callback);
+      response.write(string2);
+      response.end();
+    } else {
+      response.statusCode = 404;
+      response.end;
+    }
   } else {
     response.statusCode = 404;
     response.setHeader("Content-Type", "text/html;charset=utf-8");
